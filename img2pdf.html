@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image to PDF Converter — Free & Private | PDF Master</title>
+<meta name="description" content="Convert JPG, PNG, WebP, HEIC to PDF — free, private, browser-based. No upload, no signup.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--surface:#14141f;--border:#252540;--text:#e8e8f0;--muted:#8888a0;--accent:#6c5ce7;--accent-glow:#a29bfe;--success:#00b894;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border)}
+header .logo{font-size:1.2rem;font-weight:800;background:linear-gradient(135deg,var(--accent-glow),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero{text-align:center;padding:48px 24px 32px}
+.hero h1{font-size:2.2rem;font-weight:800;margin-bottom:8px}
+.hero p{color:var(--muted);font-size:1.05rem}
+.container{max-width:800px;margin:0 auto;padding:0 20px 60px}
+.dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:48px 24px;text-align:center;cursor:pointer;background:var(--surface);margin-bottom:16px;transition:all 0.3s}
+.dropzone:hover,.dropzone.dragover{border-color:var(--accent);background:rgba(108,92,231,0.06)}
+.dropzone .icon{font-size:3rem;margin-bottom:12px}
+.dropzone .hint{color:var(--muted);font-size:0.9rem;margin-top:8px}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-bottom:16px}
+.preview-item{position:relative;border-radius:8px;overflow:hidden;border:2px solid var(--border);aspect-ratio:3/4;background:var(--surface)}
+.preview-item img{width:100%;height:100%;object-fit:cover}
+.preview-item .idx{position:absolute;top:4px;left:4px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.75rem}
+.preview-item .remove-btn{position:absolute;top:4px;right:4px;background:rgba(231,76,60,0.9);color:#fff;border:none;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:0.75rem;line-height:22px;text-align:center}
+.options{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;align-items:center}
+.options label{font-size:0.9rem;color:var(--muted);display:flex;align-items:center;gap:4px}
+.options select,.options input{padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.9rem}
+.options input[type=number]{width:70px}
+.btn{padding:12px 28px;border:none;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:8px;font-weight:500;z-index:1000;animation:slideIn 0.3s ease;background:var(--success);color:#fff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" style="text-decoration:none" class="logo">PDF Master</a>
+  <a href="/" style="color:var(--muted);text-decoration:none;font-size:0.9rem">← Back to Tools</a>
+</header>
+
+<div class="hero">
+  <h1>Image to PDF Converter</h1>
+  <p>Convert images to PDF — free, private, in your browser</p>
+</div>
+
+<div class="container">
+  <div class="dropzone" id="dropzone">
+    <div class="icon">🖼️ → 📄</div>
+    <p><strong>Drop images here</strong> or click to browse</p>
+    <p class="hint">JPG, PNG, WebP, HEIC, BMP, SVG — any format your browser can display</p>
+    <input type="file" id="file-input" multiple accept="image/*" hidden>
+  </div>
+
+  <div class="preview-grid" id="preview-grid"></div>
+
+  <div class="options">
+    <label>Page size: <select id="page-size"><option value="a4">A4</option><option value="letter">Letter</option><option value="original">Original image size</option></select></label>
+    <label>Orientation: <select id="orientation"><option value="auto">Auto</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
+    <label>Margin: <input type="number" id="margin" value="20" min="0" max="100">px</label>
+    <label>Images per page: <select id="per-page"><option value="1">1</option><option value="2">2</option><option value="4">4</option></select></label>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btn-convert" disabled>Convert to PDF</button>
+    <button class="btn btn-outline" id="btn-clear">Clear All</button>
+  </div>
+</div>
+
+<script>
+let images=[];
+const $=s=>document.querySelector(s);
+const dz=$('#dropzone'),fi=$('#file-input'),grid=$('#preview-grid'),btn=$('#btn-convert');
+
+dz.addEventListener('click',()=>fi.click());
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');addFiles(Array.from(e.dataTransfer.files))});
+fi.addEventListener('change',()=>{addFiles(Array.from(fi.files));fi.value=''});
+
+function addFiles(files){
+  files.forEach(f=>{
+    if(f.type.startsWith('image/')){
+      const url=URL.createObjectURL(f);
+      images.push({file:f,url});
+    }
+  });
+  renderPreviews();
+}
+
+function renderPreviews(){
+  grid.innerHTML=images.map((img,i)=>`
+    <div class="preview-item">
+      <img src="${img.url}" alt="Image ${i+1}">
+      <span class="idx">${i+1}</span>
+      <button class="remove-btn" data-idx="${i}">×</button>
+    </div>
+  `).join('');
+  btn.disabled=images.length===0;
+  grid.querySelectorAll('.remove-btn').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    URL.revokeObjectURL(images[+b.dataset.idx].url);
+    images.splice(+b.dataset.idx,1);
+    renderPreviews();
+  }));
+}
+
+$('#btn-clear').addEventListener('click',()=>{images.forEach(i=>URL.revokeObjectURL(i.url));images=[];renderPreviews()});
+
+$('#btn-convert').addEventListener('click',async()=>{
+  btn.disabled=true;btn.textContent='Converting...';
+  const doc=await PDFLib.PDFDocument.create();
+  const pageSize=$('#page-size').value;
+  const margin=parseInt($('#margin').value);
+  const perPage=parseInt($('#per-page').value);
+  const sizes={a4:[595,842],letter:[612,792]};
+
+  for(let i=0;i<images.length;i+=perPage){
+    let pw,ph;
+    if(pageSize==='original'){
+      const img=await loadImageSize(images[i].url);
+      pw=img.w+margin*2;ph=img.h+margin*2;
+    }else{
+      const s=sizes[pageSize];
+      const or=$('#orientation').value;
+      if(or==='landscape'||(or==='auto'&&s[0]>s[1])){pw=s[1];ph=s[0]}
+      else{pw=s[0];ph=s[1]}
+    }
+
+    const page=doc.addPage([pw,ph]);
+
+    for(let j=0;j<perPage&&i+j<images.length;j++){
+      const imgBytes=await fetch(images[i+j].url).then(r=>r.arrayBuffer());
+      let emb;
+      if(images[i+j].file.type==='image/png') emb=await doc.embedPng(imgBytes);
+      else emb=await doc.embedJpg(imgBytes);
+
+      const dims=emb.scale(1);
+      const cellW=(pw-margin*2)/ (perPage===4?2:1);
+      const cellH=(ph-margin*2)/ (perPage===4||perPage===2?2:1);
+      const scale=Math.min(cellW/dims.width,cellH/dims.height)*0.9;
+      const col=j% (perPage===4?2:perPage);
+      const row=Math.floor(j/(perPage===4?2:1));
+      const x=margin+col*cellW+(cellW-dims.width*scale)/2;
+      const y=ph-margin-(row+1)*cellH+(cellH-dims.height*scale)/2;
+
+      page.drawImage(emb,{x,y,width:dims.width*scale,height:dims.height*scale});
+    }
+  }
+
+  const bytes=await doc.save();
+  saveAs(new Blob([bytes],{type:'application/pdf'}),'images.pdf');
+  const t=document.createElement('div');t.className='toast';t.textContent=`✅ PDF created with ${images.length} image(s)`;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);
+  btn.disabled=false;btn.textContent='Convert to PDF';
+});
+
+function loadImageSize(url){
+  return new Promise(r=>{const img=new Image();img.onload=()=>r({w:img.naturalWidth,h:img.naturalHeight});img.src=url});
+}
+</script>
+</body>
+</html>

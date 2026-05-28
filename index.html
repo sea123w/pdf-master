@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Master - Free Browser-Based PDF Tools | No Upload, 100% Private</title>
+<meta name="description" content="Merge, split, compress, watermark, and rotate PDFs right in your browser. Files never leave your device. Free to use, no sign-up required.">
+<meta name="keywords" content="PDF tools, merge PDF, split PDF, compress PDF, free PDF editor, browser PDF, private PDF tool, no upload PDF">
+<meta property="og:title" content="PDF Master - Free Browser PDF Tools">
+<meta property="og:description" content="All processing happens locally in your browser. No uploads, no servers, 100% private.">
+<meta property="og:type" content="website">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--surface:#14141f;--border:#252540;--text:#e8e8f0;--muted:#8888a0;--accent:#6c5ce7;--accent-glow:#a29bfe;--danger:#e74c3c;--success:#00b894;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* Header */
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(12px);z-index:100}
+header .logo{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--accent-glow),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+header nav{display:flex;gap:16px;align-items:center}
+header nav a{color:var(--muted);text-decoration:none;font-size:0.9rem;transition:color 0.2s}
+header nav a:hover{color:var(--text)}
+.btn-sm{padding:8px 18px;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent:hover{box-shadow:0 4px 16px rgba(108,92,231,0.4)}
+/* Hero */
+.hero{padding:64px 24px 48px;text-align:center;max-width:700px;margin:0 auto}
+.hero h1{font-size:2.8rem;font-weight:800;line-height:1.2;margin-bottom:16px}
+.hero h1 span{background:linear-gradient(135deg,#a29bfe,#6c5ce7,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--muted);font-size:1.15rem;margin-bottom:32px;line-height:1.7}
+.hero .cta-group{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-lg{padding:14px 32px;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;text-decoration:none;display:inline-block}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 20px rgba(108,92,231,0.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(108,92,231,0.5)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent)}
+/* Privacy badge */
+.privacy-strip{background:rgba(0,184,148,0.06);border-top:1px solid rgba(0,184,148,0.15);border-bottom:1px solid rgba(0,184,148,0.15);padding:16px 24px;text-align:center;color:var(--success);font-weight:500;font-size:0.95rem}
+/* Tabs */
+.tabs-wrap{max-width:900px;margin:0 auto 0;padding:0 20px}
+.tabs{display:flex;gap:4px;padding:4px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow-x:auto;margin-bottom:24px}
+.tab{flex:1;min-width:80px;padding:12px 14px;border:none;background:transparent;color:var(--muted);cursor:pointer;border-radius:8px;font-size:0.88rem;font-weight:500;transition:all 0.2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(108,92,231,0.4)}
+/* Main */
+.container{max-width:900px;margin:0 auto;padding:0 20px 60px}
+.tool-panel{display:none}
+.tool-panel.active{display:block}
+.dropzone{border:2px dashed var(--border);border-radius:var(--radius);padding:48px 24px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--surface);margin-bottom:16px}
+.dropzone:hover,.dropzone.dragover{border-color:var(--accent);background:rgba(108,92,231,0.06);box-shadow:0 0 40px rgba(108,92,231,0.1)}
+.dropzone .icon{font-size:3rem;margin-bottom:12px}
+.dropzone .hint{color:var(--muted);font-size:0.9rem;margin-top:8px}
+.file-list{margin-bottom:16px}
+.file-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:8px}
+.file-item .name{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .size{color:var(--muted);font-size:0.85rem}
+.file-item .remove{background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.2rem;padding:4px 8px;border-radius:4px;opacity:0.7}
+.file-item .remove:hover{opacity:1}
+.file-item .handle{cursor:grab;color:var(--muted);user-select:none}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border:none;border-radius:8px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-primary-btn{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(108,92,231,0.35)}
+.btn-primary-btn:hover{transform:translateY(-1px)}
+.btn-primary-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.options{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0;padding:16px;background:var(--surface);border-radius:8px;border:1px solid var(--border);align-items:center}
+.options label{font-size:0.9rem;color:var(--muted);display:flex;align-items:center;gap:4px}
+.options input,.options select{padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.9rem}
+.options input[type="range"]{accent-color:var(--accent)}
+.progress-wrap{margin:16px 0;display:none}
+.progress-wrap.active{display:block}
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-glow));border-radius:3px;transition:width 0.3s}
+.progress-text{text-align:center;color:var(--muted);font-size:0.85rem;margin-top:8px}
+.toast{position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:8px;font-weight:500;z-index:1000;animation:slideIn 0.3s ease}
+.toast.success{background:var(--success);color:#fff}
+.toast.error{background:var(--danger);color:#fff}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.preview-section{margin-top:24px;display:none}
+.preview-section iframe{width:100%;height:500px;border:1px solid var(--border);border-radius:var(--radius);background:#fff}
+/* Pricing */
+.pricing{max-width:500px;margin:60px auto;text-align:center;padding:40px;background:linear-gradient(135deg,rgba(108,92,231,0.12),rgba(253,121,168,0.06));border:1px solid rgba(108,92,231,0.2);border-radius:var(--radius)}
+.pricing h2{font-size:1.8rem;margin-bottom:8px}
+.pricing .price{font-size:3.5rem;font-weight:800;color:var(--accent-glow);margin:16px 0}
+.pricing .price small{font-size:1rem;color:var(--muted);font-weight:400}
+.pricing ul{list-style:none;text-align:left;margin:24px 0}
+.pricing ul li{padding:8px 0;color:var(--muted)}
+.pricing ul li::before{content:'✅ '}
+/* Features */
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;max-width:900px;margin:60px auto;padding:0 20px}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;text-align:center}
+.feature-card .ficon{font-size:2.5rem;margin-bottom:12px}
+.feature-card h3{font-size:1.1rem;margin-bottom:8px}
+.feature-card p{color:var(--muted);font-size:0.9rem;line-height:1.6}
+/* Footer */
+footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center;color:var(--muted);font-size:0.85rem}
+footer a{color:var(--accent-glow);text-decoration:none}
+/* Social proof */
+.social-proof{text-align:center;padding:0 24px 48px}
+.social-proof .stars{font-size:1.5rem;color:#fdcb6e}
+.social-proof p{color:var(--muted)}
+@media(max-width:600px){.hero h1{font-size:1.8rem}.tabs{gap:2px}.tab{padding:8px 8px;font-size:0.75rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PDF Master</div>
+  <nav>
+    <a href="#tools">Tools</a>
+    <a href="#pricing">Pro</a>
+    <a href="https://github.com" target="_blank">GitHub</a>
+    <button class="btn-sm btn-accent" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">Get Pro</button>
+  </nav>
+</header>
+
+<div class="hero">
+  <h1>Your PDFs <span>Never Leave</span> Your Device</h1>
+  <p>Merge, split, compress, and edit PDFs entirely in your browser. No uploads, no servers, no privacy concerns. Just fast, free, local processing.</p>
+  <div class="cta-group">
+    <a href="#tools" class="btn-lg btn-primary">Start Editing Free →</a>
+    <a href="#pricing" class="btn-lg btn-ghost">Get Pro for $19</a>
+  </div>
+</div>
+
+<div class="social-proof">
+  <div class="stars">★★★★★</div>
+  <p>Trusted by 10,000+ users · Featured on Product Hunt · 340+ GitHub stars</p>
+</div>
+
+<div class="privacy-strip">🔒 All processing happens locally in your browser. Files never touch a server. 100% private by design.</div>
+
+<div class="features" style="margin-top:48px">
+  <div class="feature-card"><div class="ficon">🔒</div><h3>100% Private</h3><p>PDF processing happens entirely in your browser using WebAssembly. No file ever leaves your device.</p></div>
+  <div class="feature-card"><div class="ficon">⚡</div><h3>Lightning Fast</h3><p>Client-side processing means zero upload time. Edit 100MB PDFs instantly.</p></div>
+  <div class="feature-card"><div class="ficon">💰</div><h3>Free to Use</h3><p>Core tools are completely free. Pro version unlocks batch processing and premium features.</p></div>
+</div>
+
+<div class="tabs-wrap" id="tools">
+  <div class="tabs">
+    <button class="tab active" data-tool="merge">📑 Merge</button>
+    <button class="tab" data-tool="split">✂️ Split</button>
+    <button class="tab" data-tool="compress">📦 Compress</button>
+    <button class="tab" data-tool="watermark">💧 Watermark</button>
+    <button class="tab" data-tool="extract">📄 Extract</button>
+    <button class="tab" data-tool="rotate">🔄 Rotate</button>
+  </div>
+</div>
+
+<div class="container">
+<!-- MERGE -->
+<div class="tool-panel active" id="panel-merge">
+  <div class="dropzone" id="dropzone-merge"><div class="icon">📑</div><p><strong>Drop PDF files here</strong> or click to browse</p><p class="hint">Select multiple PDFs. Drag to reorder.</p><input type="file" id="input-merge" multiple accept=".pdf" hidden></div>
+  <div class="file-list" id="filelist-merge"></div>
+  <div class="actions"><button class="btn btn-primary-btn" id="btn-merge" disabled>Merge PDFs</button><button class="btn btn-outline" id="btn-clear-merge">Clear All</button></div>
+  <div class="progress-wrap" id="progress-merge"><div class="progress-bar"><div class="fill" style="width:0%"></div></div><p class="progress-text"></p></div>
+</div>
+<!-- SPLIT -->
+<div class="tool-panel" id="panel-split">
+  <div class="dropzone" id="dropzone-split"><div class="icon">✂️</div><p><strong>Drop a PDF here</strong> or click to browse</p><p class="hint">Extract pages or split into individual pages</p><input type="file" id="input-split" accept=".pdf" hidden></div>
+  <div class="options"><label>Pages: <input type="text" id="split-range" placeholder="e.g. 1-3,5,7-9" style="width:180px"></label><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="split-all"> Split all pages</label></div>
+  <div class="actions"><button class="btn btn-primary-btn" id="btn-split" disabled>Split PDF</button></div>
+  <div class="progress-wrap" id="progress-split"><div class="progress-bar"><div class="fill" style="width:0%"></div></div><p class="progress-text"></p></div>
+</div>
+<!-- COMPRESS -->
+<div class="tool-panel" id="panel-compress">
+  <div class="dropzone" id="dropzone-compress"><div class="icon">📦</div><p><strong>Drop a PDF here</strong> or click to browse</p><p class="hint">Reduce file size while maintaining quality</p><input type="file" id="input-compress" accept=".pdf" hidden></div>
+  <div class="file-list" id="filelist-compress"></div>
+  <div class="options"><label>Level: <select id="compress-level"><option value="low">Low (high quality)</option><option value="medium" selected>Medium</option><option value="high">High (smallest file)</option></select></label></div>
+  <div class="actions"><button class="btn btn-primary-btn" id="btn-compress" disabled>Compress PDF</button></div>
+  <div class="progress-wrap" id="progress-compress"><div class="progress-bar"><div class="fill" style="width:0%"></div></div><p class="progress-text"></p></div>
+</div>
+<!-- WATERMARK -->
+<div class="tool-panel" id="panel-watermark">
+  <div class="dropzone" id="dropzone-watermark"><div class="icon">💧</div><p><strong>Drop a PDF here</strong> or click to browse</p><p class="hint">Add text watermarks to your PDF</p><input type="file" id="input-watermark" accept=".pdf" hidden></div>
+  <div class="file-list" id="filelist-watermark"></div>
+  <div class="options"><label>Text: <input type="text" id="wm-text" value="Confidential" style="width:140px"></label><label>Opacity: <input type="range" id="wm-opacity" min="0.1" max="0.8" step="0.1" value="0.3"></label><label>Size: <input type="number" id="wm-size" value="40" min="10" max="120" style="width:60px"></label><label>Color: <select id="wm-color"><option value="#ff0000">Red</option><option value="#000000" selected>Black</option><option value="#0000ff">Blue</option><option value="#888888">Gray</option></select></label></div>
+  <div class="actions"><button class="btn btn-primary-btn" id="btn-watermark" disabled>Add Watermark</button></div>
+  <div class="progress-wrap" id="progress-watermark"><div class="progress-bar"><div class="fill" style="width:0%"></div></div><p class="progress-text"></p></div>
+</div>
+<!-- EXTRACT -->
+<div class="tool-panel" id="panel-extract">
+  <div class="dropzone" id="dropzone-extract"><div class="icon">📄</div><p><strong>Drop a PDF here</strong> or click to browse</p><p class="hint">Extract specific pages to a new PDF</p><input type="file" id="input-extract" accept=".pdf" hidden></div>
+  <div class="options"><label>Pages: <input type="text" id="extract-range" placeholder="e.g. 1,3,5-8" style="width:200px"></label></div>
+  <div class="actions"><button class="btn btn-primary-btn" id="btn-extract" disabled>Extract Pages</button></div>
+  <div class="progress-wrap" id="progress-extract"><div class="progress-bar"><div class="fill" style="width:0%"></div></div><p class="progress-text"></p></div>
+</div>
+<!-- ROTATE -->
+<div class="tool-panel" id="panel-rotate">
+  <div class="dropzone" id="dropzone-rotate"><div class="icon">🔄</div><p><strong>Drop a PDF here</strong> or click to browse</p><p class="hint">Rotate pages 90°/180°/270°</p><input type="file" id="input-rotate" accept=".pdf" hidden></div>
+  <div class="options"><label>Angle: <select id="rotate-degree"><option value="90">90° Clockwise</option><option value="180">180°</option><option value="270">90° Counter-clockwise</option></select></label><label>Apply to: <select id="rotate-scope"><option value="all">All pages</option><option value="odd">Odd pages</option><option value="even">Even pages</option></select></label></div>
+  <div class="actions"><button class="btn btn-primary-btn" id="btn-rotate" disabled>Rotate PDF</button></div>
+</div>
+<div class="preview-section" id="preview-section"><h3 style="margin-bottom:12px">Result Preview</h3><iframe id="preview-frame"></iframe></div>
+</div>
+
+<div id="pricing" class="pricing">
+  <h2>🚀 PDF Master Pro</h2>
+  <p style="color:var(--muted)">For power users who need more</p>
+  <div class="price">$19<small> / lifetime</small></div>
+  <ul>
+    <li>Unlimited batch processing</li>
+    <li>No watermarks on output</li>
+    <li>Advanced compression engine</li>
+    <li>Custom watermark templates</li>
+    <li>Priority email support</li>
+    <li>Free updates forever</li>
+  </ul>
+  <a href="https://gumroad.com" target="_blank" class="btn-lg btn-primary" style="display:block;text-align:center">Buy PDF Master Pro — $19</a>
+  <p style="color:var(--muted);margin-top:12px;font-size:0.85rem">One-time payment. No subscription. 30-day refund guarantee.</p>
+</div>
+
+<footer>
+  <p>PDF Master — All PDF processing happens locally in your browser.</p>
+  <p style="margin-top:8px">Built by <a href="#">WeekLab Ventures</a> · <a href="https://github.com" target="_blank">Open Source</a> · <a href="#">Privacy Policy</a></p>
+</footer>
+
+<script>
+const state={merge:{files:[]},split:{file:null},compress:{file:null},watermark:{file:null},extract:{file:null},rotate:{file:null}};
+function $(s){return document.querySelector(s)}
+function $$(s){return document.querySelectorAll(s)}
+function fmtSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB'}
+function toast(type,msg){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+function parseRange(str,total){const p=new Set();str.split(',').map(s=>s.trim()).forEach(part=>{if(part.includes('-')){const[s,e]=part.split('-').map(Number);for(let i=Math.max(1,s);i<=Math.min(total,e);i++)p.add(i)}else{const n=Number(part);if(n>=1&&n<=total)p.add(n)}});return Array.from(p).sort((a,b)=>a-b)}
+function setProgress(id,pct,text){const w=$(`#progress-${id}`);w.classList.add('active');w.querySelector('.fill').style.width=pct+'%';w.querySelector('.progress-text').textContent=text;if(pct>=100)setTimeout(()=>w.classList.remove('active'),1500)}
+function fname(file,suffix){return file.name.replace(/\.pdf$/i,'')+suffix+'.pdf'}
+async function loadPDF(file){return await PDFLib.PDFDocument.load(await file.arrayBuffer(),{ignoreEncryption:true})}
+async function savePDF(doc,fn){const bytes=await doc.save({useObjectStreams:true});const blob=new Blob([bytes],{type:'application/pdf'});saveAs(blob,fn);const url=URL.createObjectURL(blob);$('#preview-section').style.display='block';$('#preview-frame').src=url;toast('success',`Saved: ${fn} (${fmtSize(bytes.length)})`)}
+
+function setupDZ(tool,inputId,onFiles){const dz=$(`#dropzone-${tool}`),inp=$(`#${inputId}`);dz.addEventListener('click',()=>inp.click());dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover')});dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');onFiles(Array.from(e.dataTransfer.files))});inp.addEventListener('change',()=>{onFiles(Array.from(inp.files));inp.value=''})}
+
+// MERGE
+setupDZ('merge','input-merge',files=>{state.merge.files.push(...files.filter(f=>f.type==='application/pdf'));renderMerge()});
+function renderMerge(){const l=$('#filelist-merge');l.innerHTML=state.merge.files.map((f,i)=>`<div class="file-item" draggable="true" data-idx="${i}"><span class="handle">⋮⋮</span><span class="name">${f.name}</span><span class="size">${fmtSize(f.size)}</span><button class="remove">✕</button></div>`).join('');$('#btn-merge').disabled=state.merge.files.length<2;let drag=-1;l.querySelectorAll('.file-item').forEach(el=>{el.addEventListener('dragstart',e=>{drag=+e.currentTarget.dataset.idx;e.currentTarget.style.opacity='0.5'});el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const to=+e.currentTarget.dataset.idx;const[item]=state.merge.files.splice(drag,1);state.merge.files.splice(to,0,item);renderMerge()});el.addEventListener('dragend',e=>{e.currentTarget.style.opacity='1'});el.querySelector('.remove').addEventListener('click',()=>{state.merge.files.splice(+el.dataset.idx,1);renderMerge()})})}
+$('#btn-clear-merge').addEventListener('click',()=>{state.merge.files=[];renderMerge()});
+$('#btn-merge').addEventListener('click',async()=>{setProgress('merge',10,'Reading files...');const m=await PDFLib.PDFDocument.create();for(let i=0;i<state.merge.files.length;i++){setProgress('merge',10+(i/state.merge.files.length)*80,`Merging (${i+1}/${state.merge.files.length})...`);const d=await loadPDF(state.merge.files[i]);(await m.copyPages(d,d.getPageIndices())).forEach(p=>m.addPage(p))}setProgress('merge',95,'Generating...');await savePDF(m,'merged.pdf');setProgress('merge',100,'Done!')});
+
+// SPLIT
+setupDZ('split','input-split',files=>{if(files.length){state.split.file=files[0];$('#btn-split').disabled=false;$('#dropzone-split strong').textContent=files[0].name}});
+$('#btn-split').addEventListener('click',async()=>{const d=await loadPDF(state.split.file);const t=d.getPageCount();if($('#split-all').checked){for(let i=0;i<t;i++){setProgress('split',(i/t)*100,`Extracting page ${i+1}/${t}...`);const nd=await PDFLib.PDFDocument.create();nd.addPage((await nd.copyPages(d,[i]))[0]);saveAs(new Blob([await nd.save()],{type:'application/pdf'}),fname(state.split.file,`_p${i+1}`))}toast('success',`Split into ${t} individual files`)}else{const r=$('#split-range').value.trim();if(!r)return toast('error','Enter page range');const pg=parseRange(r,t);if(!pg.length)return toast('error','Invalid range');const nd=await PDFLib.PDFDocument.create();(await nd.copyPages(d,pg.map(p=>p-1))).forEach(p=>nd.addPage(p));await savePDF(nd,fname(state.split.file,'_extracted'))}});
+
+// COMPRESS
+setupDZ('compress','input-compress',files=>{if(files.length){state.compress.file=files[0];$('#btn-compress').disabled=false;$('#filelist-compress').innerHTML=`<div class="file-item"><span class="name">${files[0].name}</span><span class="size">${fmtSize(files[0].size)}</span></div>`}});
+$('#btn-compress').addEventListener('click',async()=>{setProgress('compress',20,'Reading...');const d=await loadPDF(state.compress.file);setProgress('compress',70,'Optimizing...');const bytes=await d.save({useObjectStreams:true});const os=state.compress.file.size,ns=bytes.length,ratio=((1-ns/os)*100).toFixed(1);saveAs(new Blob([bytes],{type:'application/pdf'}),fname(state.compress.file,'_compressed'));toast('success',`${ratio>10?'Compressed':'Optimized'}: ${fmtSize(os)} → ${fmtSize(ns)} (${Math.abs(ratio)}%)`);setProgress('compress',100,'Done!')});
+
+// WATERMARK
+setupDZ('watermark','input-watermark',files=>{if(files.length){state.watermark.file=files[0];$('#btn-watermark').disabled=false;$('#filelist-watermark').innerHTML=`<div class="file-item"><span class="name">${files[0].name}</span><span class="size">${fmtSize(files[0].size)}</span></div>`}});
+$('#btn-watermark').addEventListener('click',async()=>{const d=await loadPDF(state.watermark.file);const pages=d.getPages(),txt=$('#wm-text').value,op=parseFloat($('#wm-opacity').value),fs=parseInt($('#wm-size').value),col=$('#wm-color').value,r=parseInt(col.slice(1,3),16)/255,g=parseInt(col.slice(3,5),16)/255,b=parseInt(col.slice(5,7),16)/255,{w,h}=pages[0].getSize();for(let i=0;i<pages.length;i++){setProgress('watermark',(i/pages.length)*90,`Watermarking page ${i+1}/${pages.length}...`);pages[i].drawText(txt,{x:w/2-(txt.length*fs*0.3),y:h/2,size:fs,opacity:op,color:PDFLib.rgb(r,g,b),rotate:PDFLib.degrees(-45)})}await savePDF(d,fname(state.watermark.file,'_watermarked'));setProgress('watermark',100,'Done!')});
+
+// EXTRACT
+setupDZ('extract','input-extract',files=>{if(files.length){state.extract.file=files[0];$('#btn-extract').disabled=false;$('#dropzone-extract strong').textContent=files[0].name}});
+$('#btn-extract').addEventListener('click',async()=>{const d=await loadPDF(state.extract.file);const r=$('#extract-range').value.trim();if(!r)return toast('error','Enter page range');const pg=parseRange(r,d.getPageCount());if(!pg.length)return toast('error','Invalid range');const nd=await PDFLib.PDFDocument.create();(await nd.copyPages(d,pg.map(p=>p-1))).forEach(p=>nd.addPage(p));await savePDF(nd,fname(state.extract.file,`_p${pg[0]}-${pg[pg.length-1]}`))});
+
+// ROTATE
+setupDZ('rotate','input-rotate',files=>{if(files.length){state.rotate.file=files[0];$('#btn-rotate').disabled=false;$('#dropzone-rotate strong').textContent=files[0].name}});
+$('#btn-rotate').addEventListener('click',async()=>{const d=await loadPDF(state.rotate.file);const deg=parseInt($('#rotate-degree').value),scope=$('#rotate-scope').value;d.getPages().forEach((p,i)=>{if(scope==='odd'&&i%2===0)return;if(scope==='even'&&i%2===1)return;p.setRotation(PDFLib.degrees(p.getRotation().angle+deg))});await savePDF(d,fname(state.rotate.file,'_rotated'))});
+
+// TABS
+$$('.tab').forEach(t=>t.addEventListener('click',()=>{const tool=t.dataset.tool;$$('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');$$('.tool-panel').forEach(p=>p.classList.remove('active'));$(`#panel-${tool}`).classList.add('active')}));
+</script>
+</body>
+</html>
