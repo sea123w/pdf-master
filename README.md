@@ -77,6 +77,19 @@ MIT © WeekLab Ventures
 
 ---
 
+## Also from WeekLab — B2B Services for SMBs
+
+We build practical tech for small businesses:
+
+| Service | Description | Pricing |
+|---------|-------------|---------|
+| 📱 **QR Ordering** | Restaurant self-service, zero platform fees. [Demo](https://ac9a90ea60c5ce1d-39-157-112-53.serveousercontent.com) | ¥3k-8k |
+| 🤖 **Automation** | Web scraping, Excel, scheduled reports | ¥1k-8k |
+| 🧾 **InvoiceAI** | Browser-based invoice OCR. [Demo](https://6ad16c4128954965-39-157-112-53.serveousercontent.com) | ¥1k-5k |
+
+→ [WeekLab Site](https://78cc9b4e22c34fbd-39-157-112-53.serveousercontent.com) | weeklab@proton.me
+
+---
 <p align="center">
   <sub>Built with ❤️ by <a href="https://github.com/weeklab">WeekLab Ventures</a></sub>
 </p>
