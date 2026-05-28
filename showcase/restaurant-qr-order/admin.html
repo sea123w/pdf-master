@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商家管理后台 · 老王家面馆</title>
+<style>
+:root{--bg:#f5f1eb;--card:#fff;--text:#2c2416;--muted:#8b7355;--accent:#d4451d;--accent2:#e8833a;--border:#e8dfd5;--success:#2d8c4a;--warn:#e67e22;--danger:#e74c3c;--radius:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:linear-gradient(135deg,#2c2416,#4a3728);color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:1.2rem}
+header .shop-name{font-size:0.85rem;opacity:0.7}
+.container{max-width:900px;margin:0 auto;padding:16px}
+/* Stats row */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border);text-align:center}
+.stat-card .num{font-size:1.8rem;font-weight:800;color:var(--accent)}
+.stat-card .label{font-size:0.8rem;color:var(--muted);margin-top:4px}
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px}
+.tab{padding:12px 20px;border:none;background:none;font-size:0.9rem;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+/* Order cards */
+.order-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.order-card.new{border-left:4px solid var(--accent)}
+.order-card.preparing{border-left:4px solid var(--warn)}
+.order-card.done{border-left:4px solid var(--success);opacity:0.7}
+.order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.order-header .order-id{font-weight:700;font-size:1rem}
+.order-header .time{font-size:0.8rem;color:var(--muted)}
+.order-header .table-tag{background:var(--accent);color:#fff;padding:2px 10px;border-radius:10px;font-size:0.75rem}
+.order-items{font-size:0.9rem;margin-bottom:10px}
+.order-items .item{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dotted var(--border)}
+.order-total{text-align:right;font-weight:700;font-size:1rem;margin-bottom:10px}
+.order-actions{display:flex;gap:8px}
+.order-actions button{padding:8px 16px;border-radius:6px;border:none;font-size:0.85rem;cursor:pointer;font-weight:500}
+.btn-accept{background:var(--accent);color:#fff}
+.btn-done{background:var(--success);color:#fff}
+.btn-reject{background:var(--bg);color:var(--muted);border:1px solid var(--border)!important}
+/* Menu management */
+.menu-editor{background:var(--card);border-radius:var(--radius);padding:16px;border:1px solid var(--border)}
+.cat-section{margin-bottom:20px}
+.cat-header{font-weight:700;font-size:1rem;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.menu-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #f5f1eb}
+.menu-row .item-name{flex:1;font-size:0.9rem}
+.menu-row .item-price{width:60px;text-align:right;font-weight:600;color:var(--accent)}
+.menu-row .toggle{width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background 0.2s}
+.menu-row .toggle.on{background:var(--success)}
+.menu-row .toggle.off{background:#ccc}
+.menu-row .toggle::after{content:'';position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left 0.2s}
+.menu-row .toggle.on::after{left:22px}
+.menu-row .toggle.off::after{left:2px}
+.empty-state{text-align:center;padding:40px;color:var(--muted)}
+.btn-refresh{padding:8px 16px;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:0.85rem}
+.notification{position:fixed;top:16px;right:16px;background:var(--accent);color:#fff;padding:12px 20px;border-radius:8px;z-index:1000;display:none;animation:slideIn 0.3s ease}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>商家管理后台</h1>
+    <div class="shop-name">老王家面馆 · A3桌</div>
+  </div>
+  <button class="btn-refresh" onclick="refreshOrders()" style="background:rgba(255,255,255,0.15);color:#fff;border:none">🔄 刷新</button>
+</header>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="stat-new">0</div><div class="label">新订单</div></div>
+    <div class="stat-card"><div class="num" id="stat-preparing">0</div><div class="label">制作中</div></div>
+    <div class="stat-card"><div class="num" id="stat-today">0</div><div class="label">今日完成</div></div>
+    <div class="stat-card"><div class="num" id="stat-revenue">¥0</div><div class="label">今日营收</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="orders">📋 订单管理</button>
+    <button class="tab" data-tab="menu">📝 菜单管理</button>
+  </div>
+
+  <div id="tab-orders">
+    <div id="order-list"></div>
+  </div>
+
+  <div id="tab-menu" style="display:none">
+    <div class="menu-editor" id="menu-editor"></div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+
+// Default menu
+const defaultMenu={
+  noodle:[
+    {name:'招牌牛肉拉面',desc:'澳洲牛腱 · 手工拉制 · 骨汤熬制8小时',price:28,active:true},
+    {name:'红烧牛肉面',desc:'大块牛腩 · 浓油赤酱',price:32,active:true},
+    {name:'炸酱面',desc:'老北京风味 · 肉末炸酱 · 黄瓜丝',price:18,active:true},
+    {name:'油泼面',desc:'陕西风味 · 滚油泼辣子 · 蒜香四溢',price:16,active:true},
+    {name:'西红柿鸡蛋面',desc:'家常味道 · 酸甜可口',price:14,active:true},
+  ],
+  rice:[
+    {name:'红烧牛腩饭',desc:'牛腩软烂 · 汤汁浇饭',price:30,active:true},
+    {name:'宫保鸡丁饭',desc:'鸡腿肉 · 花生碎 · 微辣',price:22,active:true},
+    {name:'回锅肉饭',desc:'五花肉 · 蒜苗 · 郫县豆瓣',price:24,active:true},
+  ],
+  snack:[
+    {name:'手工水饺',desc:'猪肉白菜馅 · 12只/份',price:18,active:true},
+    {name:'红油抄手',desc:'麻辣鲜香 · 8只/份',price:15,active:true},
+    {name:'葱花饼',desc:'外酥里软 · 现烙',price:8,active:true},
+    {name:'凉拌黄瓜',desc:'蒜泥 · 香醋 · 爽脆',price:8,active:true},
+  ],
+  drink:[
+    {name:'冰镇酸梅汤',desc:'古法熬制 · 消暑解渴',price:6,active:true},
+    {name:'自制豆浆',desc:'现磨 · 冷热可选',price:5,active:true},
+    {name:'王老吉',desc:'罐装',price:6,active:true},
+  ]
+};
+
+function getMenu(){return JSON.parse(localStorage.getItem('admin_menu')||JSON.stringify(defaultMenu))}
+function saveMenu(menu){localStorage.setItem('admin_menu',JSON.stringify(menu))}
+function getOrders(){return JSON.parse(localStorage.getItem('admin_orders')||'[]')}
+function saveOrders(orders){localStorage.setItem('admin_orders',JSON.stringify(orders))}
+
+function notify(msg){
+  const el=$('#notification');
+  el.textContent=msg;el.style.display='block';
+  setTimeout(()=>el.style.display='none',2500);
+}
+
+// Order management
+function refreshOrders(){
+  const orders=getOrders(),now=new Date();
+  let newCount=0,preparingCount=0,doneToday=0,revenueToday=0;
+  const today=new Date().toDateString();
+
+  orders.forEach(o=>{
+    if(o.status==='new') newCount++;
+    else if(o.status==='preparing') preparingCount++;
+    else if(o.status==='done'&&new Date(o.doneTime).toDateString()===today){doneToday++;revenueToday+=o.total}
+  });
+
+  $('#stat-new').textContent=newCount;
+  $('#stat-preparing').textContent=preparingCount;
+  $('#stat-today').textContent=doneToday;
+  $('#stat-revenue').textContent='¥'+revenueToday.toFixed(0);
+
+  const list=$('#order-list');
+  if(!orders.length){list.innerHTML='<div class="empty-state"><p style="font-size:3rem">📭</p><p>暂无订单</p><p style="font-size:0.8rem;color:var(--muted)">顾客扫码点餐后，订单会出现在这里</p></div>';return}
+
+  list.innerHTML=orders.slice().reverse().map((o,i)=>{
+    const idx=orders.length-1-i;
+    const statusLabels={new:'新订单',preparing:'制作中',done:'已完成',cancelled:'已取消'};
+    const statusClass=o.status;
+    let actions='';
+    if(o.status==='new') actions=`<button class="btn-accept" onclick="acceptOrder(${idx})">✅ 接单</button><button class="btn-reject" onclick="rejectOrder(${idx})">✕ 拒单</button>`;
+    else if(o.status==='preparing') actions=`<button class="btn-done" onclick="doneOrder(${idx})">✓ 完成</button>`;
+
+    return `<div class="order-card ${statusClass}">
+      <div class="order-header">
+        <span class="order-id">#${o.orderNum}</span>
+        <span class="table-tag">🪑 ${o.table||'A3'}</span>
+        <span class="time">${new Date(o.time).toLocaleTimeString('zh-CN')}</span>
+      </div>
+      <div class="order-items">${o.items.map(i=>`<div class="item"><span>${i.name} ×${i.qty}</span><span>¥${(i.price*i.qty).toFixed(2)}</span></div>`).join('')}</div>
+      ${o.note?`<div style="font-size:0.85rem;color:var(--warn);margin-bottom:8px">💬 备注：${o.note}</div>`:''}
+      <div class="order-total">合计 ¥${o.total.toFixed(2)} <span style="font-size:0.8rem;color:var(--muted);margin-left:8px">${statusLabels[o.status]}</span></div>
+      <div class="order-actions">${actions}</div>
+    </div>`;
+  }).join('');
+}
+
+function acceptOrder(idx){
+  const orders=getOrders();
+  orders[idx].status='preparing';
+  saveOrders(orders);
+  notify('✅ 已接单，开始制作 #'+orders[idx].orderNum);
+  refreshOrders();
+}
+
+function doneOrder(idx){
+  const orders=getOrders();
+  orders[idx].status='done';
+  orders[idx].doneTime=new Date().toISOString();
+  saveOrders(orders);
+  notify('✅ 订单完成 #'+orders[idx].orderNum);
+  refreshOrders();
+}
+
+function rejectOrder(idx){
+  const orders=getOrders();
+  orders[idx].status='cancelled';
+  saveOrders(orders);
+  notify('✕ 已拒单 #'+orders[idx].orderNum);
+  refreshOrders();
+}
+
+// Menu management
+function renderMenuEditor(){
+  const menu=getMenu();
+  const catNames={noodle:'🍜 面食',rice:'🍚 米饭',snack:'🥟 小吃',drink:'🥤 饮品'};
+  $('#menu-editor').innerHTML=Object.entries(menu).map(([cat,items])=>`
+    <div class="cat-section">
+      <div class="cat-header">${catNames[cat]}</div>
+      ${items.map((item,i)=>`
+        <div class="menu-row">
+          <span class="item-name">${item.name}</span>
+          <span class="item-price">¥${item.price}</span>
+          <button class="toggle ${item.active?'on':'off'}" onclick="toggleItem('${cat}',${i})" title="${item.active?'上架中':'已下架'}"></button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function toggleItem(cat,idx){
+  const menu=getMenu();
+  menu[cat][idx].active=!menu[cat][idx].active;
+  saveMenu(menu);
+  renderMenuEditor();
+  notify(menu[cat][idx].active?'✅ 已上架：'+menu[cat][idx].name:'📴 已下架：'+menu[cat][idx].name);
+}
+
+// Demo: add sample orders
+function addDemoOrders(){
+  const orders=getOrders();
+  if(orders.length>0) return;
+  const demos=[
+    {orderNum:'1001',table:'A3',time:new Date(Date.now()-300000).toISOString(),items:[{name:'招牌牛肉拉面',price:28,qty:2},{name:'冰镇酸梅汤',price:6,qty:1}],total:62,status:'done',doneTime:new Date(Date.now()-120000).toISOString()},
+    {orderNum:'1002',table:'A5',time:new Date(Date.now()-120000).toISOString(),items:[{name:'红烧牛肉面',price:32,qty:1},{name:'红油抄手',price:15,qty:1},{name:'自制豆浆',price:5,qty:1}],total:52,status:'preparing'},
+    {orderNum:'1003',table:'A3',time:new Date().toISOString(),items:[{name:'炸酱面',price:18,qty:1},{name:'手工水饺',price:18,qty:1}],total:36,status:'new',note:'少放辣'},
+  ];
+  saveOrders([...orders,...demos]);
+}
+
+// Tabs
+$$('.tab').forEach(tab=>tab.addEventListener('click',()=>{
+  $$('.tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');
+  $('#tab-orders').style.display=tab.dataset.tab==='orders'?'block':'none';
+  $('#tab-menu').style.display=tab.dataset.tab==='menu'?'block':'none';
+  if(tab.dataset.tab==='menu') renderMenuEditor();
+}));
+
+// Customer order submission listener (check for new orders from customer page)
+setInterval(()=>{
+  const orders=getOrders();
+  const prevCount=parseInt(localStorage.getItem('admin_last_order_count')||'0');
+  if(orders.length>prevCount){
+    localStorage.setItem('admin_last_order_count',orders.length);
+    const latest=orders[orders.length-1];
+    if(latest&&latest.status==='new') notify('🔔 新订单！#'+latest.orderNum+' '+latest.items.map(i=>i.name).join('、'));
+  }
+  refreshOrders();
+},3000);
+
+addDemoOrders();
+refreshOrders();
+</script>
+</body>
+</html>
